@@ -9,7 +9,7 @@ module.exports = [
     .withMessage("Invalid id format"),
   body("ban")
     .notEmpty()
-    .withMessage("must be a valid id")
+    .withMessage("must be a valid boolean")
     .bail()
     .isBoolean()
     .withMessage("must be boolean"),

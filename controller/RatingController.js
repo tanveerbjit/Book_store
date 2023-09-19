@@ -4,6 +4,8 @@ const User = require("../model/User");
 const Rating = require("../model/Rating");
 const Auth = require("../model/Auth");
 const Product = require("../model/Product");
+const HTTP_STATUS = require("../constants/statusCodes");
+const { sendResponse } = require("../util/common");
 
 class ReviewController {
 
@@ -14,7 +16,14 @@ class ReviewController {
       // check for product availability
       const productExist = await Product.findById(productId);
       if (!productExist) {
-        return res.status(404).json(failure("Product Does not found"));
+        
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Product Does not found",
+          true
+        );
+     
       }
 
       const ratingExist = await Rating.findOne({
@@ -24,7 +33,12 @@ class ReviewController {
 
 
       if (ratingExist) {
-        return res.status(404).json(failure("rating already exist"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "you already add rating please edit it",
+          true
+        );
       }
 
       // Assume you have the productId and userId available
@@ -51,19 +65,34 @@ class ReviewController {
        const productSave = await productExist.save();
 
        if (productSave) {
-         return res
-           .status(200)
-           .json(success("Data Has been saved succesfully", data));
+
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has been saved succesfully", data);
+         
        } else {
-         return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
+        
        }
          
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
       }
     } catch (error) {
-      console.log(error)
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -74,7 +103,13 @@ class ReviewController {
       // check for product availability
       const productExist = await Product.findById(productId);
       if (!productExist) {
-        return res.status(404).json(failure("Product Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Product Does not found",
+          true
+        );
+       
       }
 
       const ratingExist = await Rating.findOne({
@@ -83,7 +118,13 @@ class ReviewController {
       });
 
       if (!ratingExist) {
-        return res.status(404).json(failure("Rating Does not exist"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Rating Does not exist",
+          true
+        );
+       
       }
       let previousRating = ratingExist.rating;
       // Assume you have the productId and userId available
@@ -101,17 +142,32 @@ class ReviewController {
         const productSave = await productExist.save();
 
         if (productSave) {
-          return res
-            .status(200)
-            .json(success("Data Has been saved succesfully", data));
+          return sendResponse(res, HTTP_STATUS.OK, "Data Has been saved succesfully", data);
+          
         } else {
-          return res.status(404).json(failure("Data Does not found"));
+          return sendResponse(
+            res,
+            HTTP_STATUS.NOT_FOUND,
+            "Data Does not found",
+            true
+          );
+        
         }
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -121,9 +177,16 @@ class ReviewController {
       const { id } = req.params;
 
       const ratingExist = await Rating.findOne({_id:id,user:req.id});
+      console.log(req.id)
 
       if (!ratingExist) {
-        return res.status(404).json(failure("Rating Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Rating Does not found",
+          true
+        );
+     
       }
 
       const deletedRating = await Rating.findOneAndDelete({
@@ -142,29 +205,31 @@ class ReviewController {
           productExist.num_of_people = productExist.num_of_people - 1;
           const productSave = await productExist.save();
           if (productSave) {
-             return res
-               .status(200)
-               .json({
-                 success: true,
-                 message:
-                   "Rating deleted successfully",
-               });
+            return sendResponse(res, HTTP_STATUS.OK, "Rating deleted successfully");
+             
           } else {
-            return res
-              .status(200)
-              .json({ success: true, message: "Rating deleted successfully but prodect update unsuccess" });
+            return sendResponse(res, HTTP_STATUS.OK, "Rating deleted successfully but prodect update unsuccess");
+          
           }
         }
+        return sendResponse(res, HTTP_STATUS.OK, "Rating deleted successfully");
 
-        return res
-          .status(200)
-          .json({ success: true, message: "Rating deleted successfully" });
       } else {
-        res.status(404).json({ success: false, message: "Rating not found" });
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Rating not found",
+          true
+        );
       }
     } catch (error) {
-      console.log(error)
-      return res.status(500).json(failure("Internal Server Error"));
+
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 

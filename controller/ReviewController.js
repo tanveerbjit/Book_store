@@ -4,6 +4,8 @@ const User = require("../model/User");
 const Review = require("../model/Review");
 const Auth = require("../model/Auth");
 const Product = require("../model/Product");
+const HTTP_STATUS = require("../constants/statusCodes");
+const { sendResponse } = require("../util/common");
 
 class ReviewController {
   async store(req, res) {
@@ -15,7 +17,13 @@ class ReviewController {
       // check for product availability
       const productExist = await Product.findById(productId);
       if (!productExist) {
-        return res.status(404).json(failure("Product Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Product Does not found",
+          true
+        );
+       
       }
 
       const reviewExist = await Review.findOne({
@@ -24,7 +32,13 @@ class ReviewController {
       });
 
       if (reviewExist) {
-        return res.status(404).json(failure("review already exist"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "review already exist",
+          true
+        );
+       
       }
 
       // Assume you have the productId and userId available
@@ -38,14 +52,24 @@ class ReviewController {
       const data = await newReview.save();
 
       if (data) {
-        return res
-          .status(200)
-          .json(success("Data Has been saved succesfully", data));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has been saved succesfully", data);
+        
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
+      
     }
   }
 
@@ -56,7 +80,14 @@ class ReviewController {
       const reviewExist = await Review.findOne({product:productId,user:req.id});
 
       if (!reviewExist) {
-        return res.status(404).json(failure("review Does not found"));
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "review Does not found",
+          true
+        );
+        
       }
 
       reviewExist.review = review;
@@ -74,19 +105,24 @@ class ReviewController {
       console.log(updatedReview);
 
       if (updatedReview) {
-        res.status(200).json({
-          success: true,
-          message: "review updated successfully",
-          review: updatedReview,
-        });
+        return sendResponse(res, HTTP_STATUS.OK, "review updated successfully", updatedReview);
       } else {
-        res.status(404).json({ success: false, message: "review not found" });
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "review not found",
+          true
+        );
+        
       }
     } catch (err) {
-      console.error(err);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -94,10 +130,17 @@ class ReviewController {
     try {
       const { id } = req.params;
 
-      const reviewExist = await Review.findOne({id:_id,user:req.id});
+      const reviewExist = await Review.findOne({_id:id,user:req.id});
 
       if (!reviewExist) {
-        return res.status(404).json(failure("review Does not found"));
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "review not found",
+          true
+        );
+        
       }
 
       const deletedReview = await Review.findOneAndDelete({
@@ -105,14 +148,26 @@ class ReviewController {
       });
 
       if (deletedReview) {
-        res
-          .status(200)
-          .json({ success: true, message: "review deleted successfully" });
+
+        return sendResponse(res, HTTP_STATUS.OK, "review deleted successfully", deletedReview);
+        
       } else {
-        res.status(404).json({ success: false, message: "review not found" });
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "review not found",
+          true
+        );
+        
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 }

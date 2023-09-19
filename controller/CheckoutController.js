@@ -7,8 +7,11 @@ const Order = require("../model/Order");
 const Cart = require("../model/Cart");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
+const HTTP_STATUS = require("../constants/statusCodes");
+const { sendResponse } = require("../util/common");
 
 class CheckoutController {
+
   async voucher(req, res) {
     try {
       const user = req.id;
@@ -18,7 +21,12 @@ class CheckoutController {
 
 
       if (!cart) {
-        return res.status(404).json(failure("No Cart Found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No Cart Found",
+          true
+        );
       }
 
       const cartId = cart._id;
@@ -219,17 +227,23 @@ class CheckoutController {
       ]);
 
       if (cartData && cartData.length > 0) {
-        return res.status(200).json(success("Your Cart", cartData[0]));
+        return sendResponse(res, HTTP_STATUS.OK, "Your Voucher",cartData[0]);
       } else {
         // If no matching items found, return the cart with missing items and set the voucher field to false
-
-        return res
-          .status(200)
-          .json(success("Your Cart is totally empty", { voucehr: false }));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "voucher not found May be product in cart deleted or stockout",
+          true
+        );
       }
     } catch (error) {
-      console.error(error);
-      return res.status(500).json(failure("Internal server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -241,19 +255,28 @@ class CheckoutController {
       const cart = await Cart.findOne({ user: req.id, checkout: false });
 
       if (!cart) {
-        return res.status(404).json(failure("No Cart Found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No Cart Found",
+          true
+        );
+     
       }
 
       const auth = await Auth.findOne({_id:req.id,ban:false});
 
+
       if (!auth) {
-        return res.status(404).json(failure("not available"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Not available",
+          true
+        );
       }
 
       
-
-      
-
       const cartId = cart._id;
 
       const cartData = await Cart.aggregate([
@@ -455,7 +478,14 @@ class CheckoutController {
 
    
       if (cart.orderItems.length !== cartData[0].orderItems.length) {
-        return res.status(404).json(failure("some product may be stock out or invalid please check the voucher"));
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "some product may be stock out or invalid please check the voucher",
+          true
+        );
+        
       }
 
       const user = await User.findById(req.user_id)
@@ -496,7 +526,12 @@ class CheckoutController {
         }
 
         if (user.amount < discountedAmount) {
-          return res.status(404).json(failure("incifucient balance"));
+          return sendResponse(
+            res,
+            HTTP_STATUS.PAYMENT_REQUIRED,
+            "incifucient balance",
+            true
+          );
         }
 
         const bulk = [];
@@ -541,22 +576,28 @@ class CheckoutController {
         const savedOrder = await newOrder.save();
         cart.checkout = true;
         await cart.save();
-
-        return res
-          .status(200)
-          .json(success("checkout done successfully", cartData[0]));
+        return sendResponse(res, HTTP_STATUS.OK, "checkout done successfully",cartData[0]);
+        
       } else {
         // If no matching items found, return the cart with missing items and set the voucher field to false
-
-        return res
-          .status(200)
-          .json(success("Your Cart is totally empty", { voucehr: false }));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Your Cart is totally empty",
+          true
+        );
+        
       }
     } catch (error) {
-      console.error(error);
-      return res.status(500).json(failure("Internal server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
+
 }
 
 module.exports = new CheckoutController();

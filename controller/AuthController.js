@@ -102,7 +102,10 @@ class AuthController {
           secure: process.env.NODE_ENV === 'production', // Enable in production
         });
 
-        return sendResponse(res, HTTP_STATUS.OK, "Successfully Logged in");
+        
+
+        const authUser = await User.findOne({_id:user}).select('first_name last_name user_name email role amount');
+        return sendResponse(res, HTTP_STATUS.OK, "Successfully Logged in",authUser);
       } else {
         await LoginAttempt.findOneAndUpdate(
           { email, ip },

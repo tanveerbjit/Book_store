@@ -363,7 +363,6 @@ class ProductController {
         },
       });
   
-      // Add a $lookup stage to join the 'Author' collection
       aggregatePipeline.push({
         $lookup: {
           from: "authors",
@@ -402,8 +401,7 @@ class ProductController {
           as: "discounts",
         },
       });
-  
-      // Add a $lookup stage to join the 'Review' collection
+
       aggregatePipeline.push({
         $lookup: {
           from: "reviews",
@@ -413,16 +411,6 @@ class ProductController {
         },
       });
   
-      // Add a $lookup stage to join the 'User' collection for review users
-      // aggregatePipeline.push({
-      //   $lookup: {
-      //     from: "auths",
-      //     localField: "reviews.user",
-      //     foreignField: "_id",
-      //     as: "reviewUsers",
-      //   },
-      // });
-  
       aggregatePipeline.push({
         $unwind: {
           path: "$discounts",
@@ -431,9 +419,18 @@ class ProductController {
       });
   
       aggregatePipeline.push({
+        $lookup: {
+          from: "discounts",
+          localField: "_id",
+          foreignField: "product",
+          as: "discount",
+        },
+      });
+  
+      aggregatePipeline.push({
         $addFields: {
           discount: {
-            $arrayElemAt: ["$discounts", 0],
+            $arrayElemAt: ["$discount", 0],
           },
         },
       });
@@ -532,7 +529,6 @@ class ProductController {
         },
       });
   
-      // Add a $project stage to calculate and show discounted prices
       aggregatePipeline.push({
         $project: {
           name: 1,
@@ -576,10 +572,6 @@ class ProductController {
               },
             },
           },
-          genericDiscount: 1,
-          premiumDiscount: 1,
-          isValidDiscount: 1,
-          // Include the 'reviews' field
           reviews: {
             $map: {
               input: "$reviews",
@@ -590,12 +582,15 @@ class ProductController {
               },
             },
           },
+          genericDiscount: 1,
+          premiumDiscount: 1,
+          isValidDiscount: 1,
         },
       });
-
-     
   
+     
       const data = await Product.aggregate(aggregatePipeline);
+      
   
       if (data.length > 0) {
         return sendResponse(res, HTTP_STATUS.OK, "Data Has Found", data[0]);
@@ -631,24 +626,33 @@ class ProductController {
       const publisherExists = await Publisher.find({ _id: { $in:publisher } });
 
       if (categoryExists.length!==category.length) {
-        return res.status(400).json({
-          success: false,
-          message: "Category does not exist",
-        });
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Category does not exist",
+          true
+        );
+        
       }
 
       if (authorExists.length !== author.length) {
-        return res.status(400).json({
-          success: false,
-          message: "Author does not exist",
-        });
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Author does not exist",
+          true
+        );
+       
       }
 
       if (publisherExists.length !== publisher.length) {
-        return res.status(400).json({
-          success: false,
-          message: "Publication does not exist",
-        });
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Publication does not exist",
+          true
+        );
+       
       }
 
       const product = new Product({
@@ -665,11 +669,15 @@ class ProductController {
       });
 
       const savedProduct = await product.save();
-
-      res.status(200).json(success("product save successfully", savedProduct));
+      return sendResponse(res, HTTP_STATUS.OK, "product added successfully", true);
     } catch (err) {
-      console.log(err);
-      res.status(500).json(failure("Internal server error"));
+      
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -716,20 +724,26 @@ class ProductController {
       if (category !== undefined) {
         const categoryExists = await Category.exists({ _id: category });
         if (!categoryExists) {
-          return res.status(400).json({
-            success: false,
-            message: "Category does not exist",
-          });
+          return sendResponse(
+            res,
+            HTTP_STATUS.NOT_FOUND,
+            "Category does not exist",
+            true
+          );
+          
         }
         updatedData.category = category;
       }
       if (author !== undefined) {
         const authorExists = await Author.exists({ _id: author });
         if (!authorExists) {
-          return res.status(400).json({
-            success: false,
-            message: "Author does not exist",
-          });
+          return sendResponse(
+            res,
+            HTTP_STATUS.NOT_FOUND,
+            "Author does not exist",
+            true
+          );
+          
         }
 
         updatedData.author = author;
@@ -737,19 +751,26 @@ class ProductController {
       if (publisher !== undefined) {
         const publisherExists = await Publisher.exists({ _id: publisher });
         if (!publisherExists) {
-          return res.status(400).json({
-            success: false,
-            message: "Publication does not exist",
-          });
+          return sendResponse(
+            res,
+            HTTP_STATUS.NOT_FOUND,
+            "Publication does not exist",
+            true
+          );
+         
         }
         updatedData.publisher = publisher;
       }
 
       if (Object.keys(updatedData).length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "No valid fields provided for update",
-        });
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          "No valid fields provided for update",
+          true
+        );
+        
       }
 
       const data = await Product.findOneAndUpdate({ _id: id }, updatedData, {
@@ -757,11 +778,15 @@ class ProductController {
       });
 
       if (data) {
-        return res
-          .status(200)
-          .json(success("Data Has been Updated successfully", data));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has been Updated successfully", data);
       } else {
-        return res.status(404).json(failure("Data Has Not Found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Has Not Found",
+          true
+        );
+        
       }
     } catch (err) {
       return sendResponse(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal Server Error",true);
@@ -773,11 +798,17 @@ class ProductController {
       const { id } = req.params;
 
       const data = await Product.findOneAndDelete({ _id: id });
-      console.log(data);
+      
       if (data) {
-        res.status(200).json(success("Data has been deleted"));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has been deleted successfully", true);
+       
       } else {
-        res.status(404).json(failure("No data found to delete"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No data found to delete",
+          true
+        );
       }
     } catch (err) {
       return sendResponse(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, "Internal Server Error",true);

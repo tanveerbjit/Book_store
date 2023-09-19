@@ -1,5 +1,7 @@
 const Discount = require("../model/Discount"); 
 const Product = require("../model/Product");
+const HTTP_STATUS = require("../constants/statusCodes");
+const { sendResponse } = require("../util/common");
 
 class DiscountController {
 
@@ -16,9 +18,12 @@ class DiscountController {
       const existingProducts = await Product.find({ _id: { $in: product } });
   
       if (existingProducts.length !== product.length) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Product does not exist" });
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Product does not exist",
+          true
+        );
       }
   
       // Define an array of product IDs to upsert discounts for
@@ -55,15 +60,22 @@ class DiscountController {
           .status(200)
           .json({ success: true, message: "Discount announced successfully" });
       } else {
-        res
-          .status(404)
-          .json({ success: false, message: "Not updated" });
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Not updated",
+          true
+        );
+       
       }
     } catch (err) {
-      console.error(err);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -74,9 +86,13 @@ class DiscountController {
       const existingProducts = await Product.find({ _id: { $in: product } });
   
       if (existingProducts.length !== product.length) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Product does not exist" });
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Product does not exist",
+          true
+        );
+        
       }
   
       // Define an array of product IDs to delete discounts for
@@ -94,15 +110,21 @@ class DiscountController {
           .status(200)
           .json({ success: true, message: "Discounts deleted successfully" });
       } else {
-        res
-          .status(404)
-          .json({ success: false, message: "No discounts were deleted" });
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No discounts were deleted",
+          true
+        );
+       
       }
     } catch (err) {
-      console.error(err);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
   

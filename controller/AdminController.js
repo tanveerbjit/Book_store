@@ -5,8 +5,11 @@ const success = require("../helpers/success");
 const failure = require("../helpers/failed");
 const Auth = require("../model/Auth");
 const Order = require("../model/Order");
+const HTTP_STATUS = require("../constants/statusCodes");
+const { sendResponse } = require("../util/common");
 
 class AdminController {
+  
   async profile(req, res) {
     try {
       const data = await User.findOne(
@@ -14,12 +17,22 @@ class AdminController {
         "-_id -__v -createdAt -updatedAt"
       );
       if (data) {
-        return res.status(200).json(success("Data Has Found", data));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has Found", data);
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "User Does not found",
+          true
+        );
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -27,12 +40,23 @@ class AdminController {
     try {
       const data = await User.find({}, "-_id -__v -createdAt -updatedAt");
       if (data.length > 0) {
-        return res.status(200).json(success("Data Has Found", data));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has Found", data);
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "User Does not found",
+          true
+        );
+        
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -42,12 +66,24 @@ class AdminController {
         .eq("u")
         .select("-_id -__v -createdAt -updatedAt");
       if (data.length > 0) {
-        return res.status(200).json(success("Data Has Found", data));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has Found", data);
+        
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
+        
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -57,12 +93,23 @@ class AdminController {
         .eq("a")
         .select("-_id -__v -createdAt -updatedAt");
       if (data.length > 0) {
-        return res.status(200).json(success("Data Has Found", data));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has Found", data);
+       
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -72,20 +119,35 @@ class AdminController {
 
       const data = await Auth.findOne({ _id: userId, role: "u" });
       if (!data) {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
+        
       } else {
         data.user_type = user_type;
         const result = await data.save();
         if (result) {
-          return res
-            .status(200)
-            .json(success("user membership updated successfully"));
+          return sendResponse(res, HTTP_STATUS.OK, "user membership updated successfully");
         } else {
-          return res.status(404).json(failure("Data Does not found"));
+          return sendResponse(
+            res,
+            HTTP_STATUS.NOT_FOUND,
+            "Data Does not found",
+            true
+          );
+          
         }
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -95,21 +157,34 @@ class AdminController {
 
       const data = await Auth.findOne({ _id: userId, role: "u" });
       if (!data) {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
       } else {
         data.ban = ban;
         const result = await data.save();
         if (result) {
-          return res
-            .status(200)
-            .json(success("user ban updated successfully"));
+          return sendResponse(res, HTTP_STATUS.OK, "user ban updated successfully");
         } else {
-          return res.status(404).json(failure("Data Does not found"));
+          return sendResponse(
+            res,
+            HTTP_STATUS.NOT_FOUND,
+            "Data Does not found",
+            true
+          );
         }
       }
     } catch (error) {
-      console.log(error);
-      return res.status(500).json(failure("Internal Server Error"));
+
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -120,15 +195,22 @@ class AdminController {
       
       const data = await Order.find({ role: "u" }).populate("user");
       if (data.length < 1) {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
       } else {
-        return res
-            .status(200)
-            .json(success("data found",data));
+        return sendResponse(res, HTTP_STATUS.OK, "user ban updated successfully", data);
       }
     } catch (error) {
-      console.log(error);
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 }

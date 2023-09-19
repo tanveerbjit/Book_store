@@ -3,6 +3,9 @@ const jwt = require("jsonwebtoken");
 const success = require("../helpers/success");
 const failure = require("../helpers/failed");
 
+const { sendResponse } = require("../util/common");
+const HTTP_STATUS = require("../constants/statusCodes");
+
 const validateToken = asyncHandler(async (req, res, next) => {
 
   if (req.params.token) {
@@ -11,17 +14,15 @@ const validateToken = asyncHandler(async (req, res, next) => {
       process.env.ACCESS_TOKEN_SECERT,
       (err, decoded) => {
         if (err) {
-          return res.status(401).json(failure("User is not authorized"));
+          return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "User is not authorized or token is missin",true);
         }
         req.email = decoded.user.email;
         req.id = decoded.user.id;
-
         next();
       }
     );
   }else{
-     res.status(401);
-     throw new Error("User is not authorized or token is missing");
+    return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "User is not authorized or token is missin",true)
   }
 });
 

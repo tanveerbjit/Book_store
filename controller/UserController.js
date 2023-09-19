@@ -4,6 +4,8 @@ const User = require("../model/User");
 const Review = require("../model/Review");
 const Auth = require("../model/Auth")
 const Order = require("../model/Order")
+const HTTP_STATUS = require("../constants/statusCodes");
+const { sendResponse } = require("../util/common");
 
 class UserController {
 
@@ -14,12 +16,22 @@ class UserController {
         "-_id -__v -createdAt -updatedAt"
       );
       if (data) {
-        return res.status(200).json(success("Data Has Found", data));
+        return sendResponse(res, HTTP_STATUS.OK, "Data Has Found", data);
       } else {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "User Does not found",
+          true
+        );
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -74,24 +86,42 @@ class UserController {
       const { amount } = req.body;
 
       const userExist = await User.findOne({_id:req.user_id});
+      
       if (!userExist) {
-        return res.status(404).json(failure("User Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "User Does not found",
+          true
+        );
+        
       }
 
       const accAmount = userExist.amount + amount ;
       if(accAmount > 100000){
-        return res
-          .status(404)
-          .json(failure(`your existing amount is ${userExist.amount} your max limit of credit is 100000 try to input less amount`));
+
+        return sendResponse(
+          res,
+          HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          `your existing amount is ${userExist.amount} your max limit of credit is 100000 try to input less amount`,
+          true
+        );
+       
       }
 
       userExist.amount = userExist.amount + amount;
       const result = userExist.save();
 
       if(result){
-        return res.status(200).json(success(`credited by ${amount}`));
+        return sendResponse(res, HTTP_STATUS.OK, `credited by ${amount}`);
       }else{
-        return res.status(404).json(failure("unsuccess transaction try try again"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "unsuccess transaction try try again",
+          true
+        );
+        
       }
 
 
@@ -108,7 +138,12 @@ class UserController {
 
       
     } catch (error) {
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -131,18 +166,25 @@ class UserController {
 
   async receipt(req, res) {
     try {
-      console.log(req.user_id)
+    
       const data = await Order.find({ user: req.user_id }).populate("user");
       if (data.length < 1) {
-        return res.status(404).json(failure("Data Does not found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Data Does not found",
+          true
+        );
       } else {
-        return res
-            .status(200)
-            .json(success("data found",data));
+        return sendResponse(res, HTTP_STATUS.OK, "data found",data);
       }
     } catch (error) {
-      console.log(error);
-      return res.status(500).json(failure("Internal Server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
   

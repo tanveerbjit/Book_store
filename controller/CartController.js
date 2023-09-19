@@ -5,6 +5,8 @@ const Order = require("../model/Order");
 const Cart = require("../model/Cart");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
+const HTTP_STATUS = require("../constants/statusCodes");
+const { sendResponse } = require("../util/common");
 
 
 
@@ -18,7 +20,12 @@ async getCart(req, res) {
     const cart = await Cart.findOne({ user: req.id, checkout: false });
 
     if (!cart) {
-      return res.status(404).json(failure("No Cart Found"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.NOT_FOUND,
+        "No Cart Found",
+        true
+      );
     }
 
     const cartId = cart._id;
@@ -217,13 +224,23 @@ async getCart(req, res) {
     ]);
 
     if (cartData && cartData.length > 0) {
-      return res.status(200).json(success("Your Cart", cartData[0]));
+      return sendResponse(res, HTTP_STATUS.OK, "Your Cart",cartData[0]);
     } else {
-      return res.status(404).json(failure("Cart is not found"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.NOT_FOUND,
+        "No Cart Found",
+        true
+      );
+      
     }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json(failure("Internal server Error"));
+    return sendResponse(
+      res,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      "Internal server error",
+      true
+    );
   }
 }
 
@@ -295,11 +312,18 @@ async getCart(req, res) {
       ///checking cart and product
       const cart = await Cart.findOne({ user: req.id, checkout: false });
       const item = await Product.findOne({ _id: itemId });
+      const HTTP_STATUS = require("../constants/statusCodes");
+      const { sendResponse } = require("../util/common");
 
       console.log("Item Found", item);
 
       if (!item) {
-        return res.status(404).json(failure("No Product Found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No Product Found",
+          true
+        );
       }
 
       const price = item.price;
@@ -318,7 +342,12 @@ async getCart(req, res) {
 
           /// checking the stock part
           if (item.stock < product.quantity + quantity) {
-            return res.status(404).json(failure("Stock exceed"));
+            return sendResponse(
+              res,
+              HTTP_STATUS.REQUEST_ENTITY_TOO_LARGE,
+              "Stock exceed",
+              true
+            );
           }
 
           /// add quantity
@@ -329,28 +358,40 @@ async getCart(req, res) {
 
           /// save data
           await cart.save();
-          return res.status(201).json(success("product added to cart", cart));
+          return sendResponse(res, HTTP_STATUS.OK, "product added to cart",cart);
+          
         } else {
           //// if no data exist in cart the push the new one
 
           cart.orderItems.push({ productId: itemId, quantity });
 
           await cart.save();
-          return res.status(201).json(success("product added to cart", cart));
+          return sendResponse(res, HTTP_STATUS.OK, "product added to cart",cart);
         }
       } else {
         if (item.stock < quantity) {
-          return res.status(404).json(failure("Stock exceed"));
+          return sendResponse(
+            res,
+            HTTP_STATUS.REQUEST_ENTITY_TOO_LARGE,
+            "Stock exceed",
+            true
+          );
         }
         // No cart exists, create one
         const newCart = await Cart.create({
           user,
           orderItems: [{ productId: itemId, quantity }],
         });
-        return res.status(201).json(success("product added to cart", newCart));
+        return sendResponse(res, HTTP_STATUS.OK, "product added to cart",newCart);
+        
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 
@@ -362,7 +403,12 @@ async getCart(req, res) {
 
       /// check the quantity
       if (quantity <= 0) {
-        return res.status(404).json(failure("Quantity should be valid"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "Quantity should be valid",
+          true
+        );
       }
 
       /// check cart and item
@@ -370,7 +416,12 @@ async getCart(req, res) {
       const item = await Product.findOne({ _id: itemId });
 
       if (!item) {
-        return res.status(404).json(failure("No Product Found"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No Product Found",
+          true
+        );
       }
 
       // const price = item.price;
@@ -389,7 +440,12 @@ async getCart(req, res) {
 
           /// check the quantity
           if (product.quantity < quantity) {
-            return res.status(404).json(failure("Quantity exceed"));
+            return sendResponse(
+              res,
+              HTTP_STATUS.REQUEST_ENTITY_TOO_LARGE,
+              "Qunatity exceed",
+              true
+            );
           }
 
           /// add quantity
@@ -409,25 +465,37 @@ async getCart(req, res) {
           if (cart.orderItems.length === 0) {
             // If it's empty, delete the cart
             await Cart.findByIdAndDelete(cart._id);
-            return res
-              .status(200)
-              .json(success("Cart is empty and has been deleted."));
+            return sendResponse(res, HTTP_STATUS.OK, "Cart is empty and has been deleted",true);
           } else {
             // Save data
             await cart.save();
-            return res
-              .status(201)
-              .json(success("Product removed from cart", cart));
+            return sendResponse(res, HTTP_STATUS.OK, "Product removed from cart",cart);
           }
         } else {
-          return res.status(404).json(failure("No Item exist"));
+          return sendResponse(
+            res,
+            HTTP_STATUS.NOT_FOUND,
+            "No Item exist",
+            true
+          );
         }
       } else {
         //no cart exists,
-        return res.status(404).json(failure("No cart Exist"));
+        return sendResponse(
+          res,
+          HTTP_STATUS.NOT_FOUND,
+          "No cart Exist",
+          true
+        );
+       
       }
     } catch (error) {
-      return res.status(500).json(failure("Internal server Error"));
+      return sendResponse(
+        res,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        "Internal server error",
+        true
+      );
     }
   }
 }
