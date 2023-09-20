@@ -31,15 +31,15 @@ module.exports = [
   // Validate 'customer' (optional)
   body("premium")
     .optional()
-    .isInt({ min: 0, max: 99 })
-    .withMessage("discount must be between 0 to 99 in integer")
+    .isInt({ min: 1, max: 99 })
+    .withMessage("discount must be between 1 to 99 in integer")
     .bail(),
 
   // Validate 'generic' (optional)
   body("generic")
     .optional()
-    .isInt({ min: 0, max: 99 })
-    .withMessage("discount must be between 0 to 99 in integer")
+    .isInt({ min: 1, max: 99 })
+    .withMessage("discount must be between 1 to 99 in integer")
     .bail(),
 
   // Validate 'discountStartDateTime' (required)

@@ -97,3 +97,4 @@
 ::ffff:127.0.0.1 - - [Wed, 20 Sep 2023 02:49:58 GMT] "POST /api/v1/auth/login HTTP/1.1" 200 215 "-" "PostmanRuntime/7.33.0"
 ::ffff:127.0.0.1 - - [Wed, 20 Sep 2023 02:50:39 GMT] "POST /api/v1/admin/discount/announce HTTP/1.1" 422 170 "-" "PostmanRuntime/7.33.0"
 ::ffff:127.0.0.1 - - [Wed, 20 Sep 2023 02:52:02 GMT] "POST /api/v1/admin/discount/announce HTTP/1.1" 200 60 "-" "PostmanRuntime/7.33.0"
+::ffff:127.0.0.1 - - [Wed, 20 Sep 2023 02:54:03 GMT] "GET /api/v1/product/all HTTP/1.1" 200 2695 "-" "PostmanRuntime/7.33.0"
