@@ -60,6 +60,9 @@ app.use("/api/v1/auth", require("./routes/authRoutes"));
 app.use("/api/v1/admin", isAdmin, require("./routes/adminRoutes"));
 app.use("/api/v1/user", isUser, require("./routes/userRoutes"));
 app.use("/api/v1/product", require("./routes/productRoutes"));
+app.use("/time",(req,res)=>{
+  return res.json({time: new Date()});
+})
 
 
 

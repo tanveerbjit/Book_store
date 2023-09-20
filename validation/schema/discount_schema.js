@@ -32,14 +32,14 @@ module.exports = [
   body("premium")
     .optional()
     .isInt({ min: 1, max: 99 })
-    .withMessage("discount must be between 1 to 99")
+    .withMessage("discount must be between 1 to 99 in integer")
     .bail(),
 
   // Validate 'generic' (optional)
   body("generic")
     .optional()
     .isInt({ min: 1, max: 99 })
-    .withMessage("discount must be between 1 to 99")
+    .withMessage("discount must be between 1 to 99 in integer")
     .bail(),
 
   // Validate 'discountStartDateTime' (required)
@@ -56,8 +56,8 @@ module.exports = [
     .notEmpty()
     .withMessage("Discount duration is required")
     .bail()
-    .isInt({ min: 1 })
-    .withMessage("Duration must be a positive integer")
+    .isInt({ min: 1 ,max:10000000000})
+    .withMessage("Duration must be a positive integer between 1 to 10000000000 minutes")
     .bail(),
 ];
 
