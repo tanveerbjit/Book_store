@@ -12,5 +12,5 @@ module.exports = [
     .notEmpty()
     .withMessage("must be filled")
     .isInt({min:1, max:5})
-    .withMessage("rating must be between 1 to 5"),
+    .withMessage("rating must be between 1 to 5 integer value"),
 ];
