@@ -26,8 +26,12 @@ async store(req, res) {
         category: savedCategory,
       });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return sendResponse(
+      res,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      "Internal server error",
+      true
+    );
   }
 }
 
@@ -70,8 +74,12 @@ async update(req, res) {
       res.status(404).json({ success: false, message: "Category not found" });
     }
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return sendResponse(
+      res,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      "Internal server error",
+      true
+    );
   }
 }
 
@@ -90,8 +98,12 @@ async destroy(req, res) {
       res.status(404).json({ success: false, message: "Category not found" });
     }
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return sendResponse(
+      res,
+      HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      "Internal server error",
+      true
+    );
   }
 }
 

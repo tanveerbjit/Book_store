@@ -10,12 +10,14 @@ const mailTemplate = require("../helpers/emailTemplate");
 const Otp = require("../model/Otp");
 const HTTP_STATUS = require("../constants/statusCodes");
 const { sendResponse } = require("../util/common");
+const mongoose = require("mongoose");
+
 
 
 class AuthController {
 
 
-  //// login
+  // login
   async login(req, res){
 
     try {
@@ -45,24 +47,35 @@ class AuthController {
           limit: { $gte: process.env.LIMIT },
         });
 
+
+        // if limit cross
         if (limit) {
           const timestamp = new Date(limit.timestamp);
+
+          // check the time difference from current time
           const timeDifference = new Date() - timestamp;
 
           // hit is crossing the limit during a time period
           if (timeDifference < 1 * 60 * 1000) {
-            // The time difference is less than 1 minutes
+
+            // The time difference is less than 1 minutes then block
             block = true;
+
           } else {
+
+            // he is  blocked add penalty time 1st hit + 1
             const unblockTime = new Date(
               limit.timestamp.getTime() + 1 * 60 * 1000
-            ); // Unblock after 20 minutes
+            );
+
+            // unblock after 1 min
             if (unblockTime <= new Date()) {
               await LoginAttempt.deleteOne({ email, ip });
             }
           }
         }
 
+        // if block
         if (block) {
           // User has exceeded the login attempts limit
           return sendResponse(
@@ -72,10 +85,12 @@ class AuthController {
             true
           );
         }
+
       }
 
       // compare password with hashedpassword
       if (auth && (await bcrypt.compare(password, auth.password))) {
+
         const {role, email, _id, user} = auth;
 
         const accessToken = jwt.sign(
@@ -91,22 +106,24 @@ class AuthController {
           {expiresIn:"1h"}
         );
 
-        // const { user } = auth;
-        if (block) {
-          block.finOneAndDelete({ email, ip });
-        }
+        // if block delete this
+        // if (block) {
+        //   block.finOneAndDelete({ email, ip });
+        // }
 
-        res.cookie('token', accessToken, {
+        res.cookie("token", accessToken, {
           maxAge: 3600000, // 1 hour in milliseconds
           httpOnly: true, // Cookie can only be accessed via HTTP(S)
-          secure: process.env.NODE_ENV === 'production', // Enable in production
+          secure: process.env.NODE_ENV === "production", // Enable in production  
         });
 
         
 
         const authUser = await User.findOne({_id:user}).select('first_name last_name user_name email role amount');
         return sendResponse(res, HTTP_STATUS.OK, "Successfully Logged in",authUser);
+
       } else {
+        /// for wrong password update the hit
         await LoginAttempt.findOneAndUpdate(
           { email, ip },
           { $setOnInsert: { email, ip }, $inc: { limit: 1 } },
@@ -135,7 +152,7 @@ class AuthController {
   }
 
 
-  ///// registration
+  // registration
  async registration(req, res){
 
       try {
@@ -144,7 +161,7 @@ class AuthController {
 
         const userAvailable = await Auth.findOne({ email });
 
-        //// chek if user is already exist or not
+        // chek if user is already exist or not
         if (userAvailable) {
           return sendResponse(
             res,
@@ -154,11 +171,11 @@ class AuthController {
           );
         }
 
-        ////Hash password
+        //Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
 
-    /// insert into database with temporary table
+    // insert into database with temporary table
     const tempUser = new TempUser({
       first_name,
       last_name,
@@ -184,7 +201,7 @@ class AuthController {
     );
 
     //// send email
-    const result = await sendEmail(email,"Registration", mailTemplate(req.token));
+    await sendEmail(email,"Registration", mailTemplate(req.token));
 
     return sendResponse(
       res,
@@ -207,7 +224,7 @@ class AuthController {
   }
 
 
-  /////////// Logout 
+  // Logout 
   async logout(req, res){
         try {
           res.clearCookie("token");
@@ -228,27 +245,29 @@ class AuthController {
         }
   }
 
-
-
-  /////////// verification 
+  // verification 
   async verification(req, res){
-
+    
+    // Start a new Mongoose session for the transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
     /////////////////// find if temporary user exist or not
 
     try {
-      const tempUser = await TempUser.findOne({ _id:req.id });
+      const tempUser = await TempUser.findOne({ _id: req.id });
 
       if (!tempUser) {
         return sendResponse(
           res,
           HTTP_STATUS.UNAUTHORIZED,
-          "User is not authorized token is invalid"
+          "User is not authorized token is invalid",
+          true
         );
       }
-  
+
       /////////////////// find if real user exist or not
       const userAvailable = await Auth.findOne({ email: req.email });
-  
+
       if (userAvailable) {
         return sendResponse(
           res,
@@ -257,10 +276,11 @@ class AuthController {
           true
         );
       }
-  
+
       /// insert into database with user table
-      const { _id,first_name, last_name, user_name, email, password,role } = tempUser;
-  
+      const { _id, first_name, last_name, user_name, email, password, role } =
+        tempUser;
+
       const user = new User({
         first_name,
         last_name,
@@ -269,38 +289,44 @@ class AuthController {
         password,
         role,
       });
-  
-      await user.save();
-  
+
+      // Save the user with the session
+      await user.save({ session });
+
       const auth = new Auth({
         email,
         password,
         role,
-        user: user._id
-      })
-  
-      await auth.save();
-  
+        user: user._id,
+      });
+
+      // Save the auth with the session
+      await auth.save({ session });
+
       /// Delete temporary data
-      await TempUser.findByIdAndDelete(_id);
-  
+      await TempUser.findByIdAndDelete(_id).session(session);
+
+      // Commit the transaction
+      await session.commitTransaction();
+      session.endSession();
+
       //// confirmation response
       return sendResponse(res, HTTP_STATUS.OK, "Successfully signed up");
-
     } catch (error) {
+
+      await session.abortTransaction();
+      session.endSession();
+
       return sendResponse(
         res,
         HTTP_STATUS.INTERNAL_SERVER_ERROR,
         "Internal server error",
         true
       );
-      
     }
-    
-
   }
 
-
+  //OTP
   async otp(req,res){
 
     try {
@@ -365,6 +391,7 @@ class AuthController {
 
   }
 
+  //Reset
   async reset(req, res){
 
     try {

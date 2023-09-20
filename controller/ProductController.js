@@ -65,21 +65,22 @@ class ProductController {
       });
 
       // Add a $lookup stage to join the 'Discount' collection
-      aggregatePipeline.push({
-        $lookup: {
-          from: "discounts",
-          localField: "_id",
-          foreignField: "product",
-          as: "discounts",
-        },
-      });
+      // aggregatePipeline.push({
+      //   $lookup: {
+      //     from: "discounts",
+      //     localField: "_id",
+      //     foreignField: "product",
+      //     as: "discount",
+      //   },
+      // });
 
-      aggregatePipeline.push({
-        $unwind: {
-          path: "$discounts",
-          preserveNullAndEmptyArrays: true,
-        },
-      });
+      // aggregatePipeline.push({
+      //   $unwind: {
+      //     path: "$discount",
+      //     preserveNullAndEmptyArrays: true,
+      //   },
+      // });
+
       aggregatePipeline.push({
         $lookup: {
           from: "discounts", // Replace with the actual name of your discount collection
@@ -95,6 +96,7 @@ class ProductController {
           },
         },
       });
+
       aggregatePipeline.push({
         $addFields: {
           currentDateTime: new Date(),
@@ -259,10 +261,10 @@ class ProductController {
       const pageSizeInt = parseInt(page_size) || 5;
       const skipCount = (pageInt - 1) * pageSizeInt;
 
-      if (pageInt > 0) {
-        aggregatePipeline.push({ $skip: skipCount });
-        aggregatePipeline.push({ $limit: pageSizeInt });
-      }
+      // if (pageInt > 0) {
+      //   aggregatePipeline.push({ $skip: skipCount });
+      //   aggregatePipeline.push({ $limit: pageSizeInt });
+      // }
 
       // Add a $project stage to calculate and show discounted prices
       aggregatePipeline.push({

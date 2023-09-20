@@ -5,8 +5,8 @@ var transport = nodemailer.createTransport({
   port: 2525,
   auth: {
     user: "b1bb931b54d2aa",
-    pass: "769fd848dec90b",
-  },
+    pass: "769fd848dec90b"
+  }
 });
 
 // Export the function to send an email
